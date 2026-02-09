@@ -3,6 +3,8 @@ package com.shyam.urlshortener.controller;
 import org.springframework.web.bind.annotation.*;
 import com.shyam.urlshortener.service.UrlService;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api")
 public class UrlController {
@@ -13,8 +15,10 @@ public class UrlController {
     }
 
     @PostMapping("/shorten")
-    public String shorten(@RequestParam String longUrl) {
+    public String shorten(@RequestParam String longUrl, HttpServletRequest request) {
         String code = urlService.shortenUrl(longUrl);
-        return "http://localhost:8080/" + code;
+        String baseUrl = request.getRequestURL().toString().replace(request.getRequestURI(), "");
+        
+        return baseUrl + "/" + code;
     }
 }
