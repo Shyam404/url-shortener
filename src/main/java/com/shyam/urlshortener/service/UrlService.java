@@ -6,7 +6,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.shyam.urlshortener.entity.UrlMapping;
-import com.shyam.urlshortener.exception.UrlNotFoundException;
 import com.shyam.urlshortener.repository.UrlMappingRepository;
 import com.shyam.urlshortener.util.Base62Util;
 
@@ -48,17 +47,17 @@ public class UrlService {
         throw new RuntimeException("Failed to generate unique short code after " + MAX_RETRIES + " attempts");
     }
 
-    public String getLongUrl(String shortCode) {
+    public Optional<String> getLongUrl(String shortCode) {
         Optional<UrlMapping> urlMappingOpt = repository.findByShortCode(shortCode);
 
         if(urlMappingOpt.isEmpty()) {
-            throw new UrlNotFoundException(shortCode);
+            return Optional.empty();
         }
 
         UrlMapping urlMapping = urlMappingOpt.get();
         urlMapping.setClickCount(urlMapping.getClickCount() + 1);
         repository.save(urlMapping);
 
-        return urlMapping.getLongUrl();
+        return Optional.of(urlMapping.getLongUrl());
     }
 }
