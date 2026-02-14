@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>URL Shortener</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 80px 20px 60px;
+    text-align: center;
+}
+
+h1 {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #cbd5e1;
+    margin-bottom: 40px;
+}
+
+.card {
+    background: white;
+    color: #111;
+    padding: 30px;
+    border-radius: 14px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    max-width: 550px;
+    margin: auto;
+}
+
+.input-wrapper {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+input {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+}
+
+input:focus {
+    outline: none;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 2px rgba(14,165,233,0.2);
+}
+
+button {
+    padding: 12px 18px;
+    border-radius: 8px;
+    border: none;
+    background: #0ea5e9;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #0284c7;
+}
+
+#resultBox {
+    margin-top: 20px;
+    display: none;
+}
+
+.resultUrl {
+    margin: 10px 0;
+    font-weight: bold;
+    word-break: break-all;
+    color: #0ea5e9;
+}
+
+.actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.secondary {
+    background: #e5e7eb;
+    color: #111;
+}
+
+.secondary:hover {
+    background: #d1d5db;
+}
+
+/* Algorithm Section */
+.algorithm-section {
+    margin-top: 70px;
+    text-align: left;
+    line-height: 1.7;
+    color: #cbd5e1;
+}
+
+.algorithm-section h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.algorithm-section ul {
+    margin-top: 10px;
+}
+
+.algorithm-section li {
+    margin-bottom: 8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>URL Shortener</h1>
+    <p class="subtitle">
+        Fast, collision-safe link shortening with server-side analytics.
+    </p>
+
+    <div class="card">
+        <h3>Enter Long URL</h3>
+
+        <div class="input-wrapper">
+            <input id="longUrl" placeholder="https://example.com">
+            <button onclick="shorten()">Shorten</button>
+        </div>
+
+        <div id="resultBox">
+            <p>Short URL:</p>
+            <div class="resultUrl" id="shortUrl"></div>
+            <div class="actions">
+                <button class="secondary" onclick="copyLink()">Copy</button>
+                <button class="secondary" onclick="visitLink()">Visit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="algorithm-section">
+        <h2>How This URL Shortener Works</h2>
+
+        <p>
+            This system generates fixed-length (6 character) short codes
+            using a hash-based approach combined with Base62 encoding.
+        </p>
+
+        <ul>
+            <li>The submitted long URL is hashed using a secure hashing algorithm (MessageDigest).</li>
+            <li>The hash bytes are converted into a positive numeric value.</li>
+            <li>The numeric value is encoded into Base62 (0-9, a-z, A-Z).</li>
+            <li>A fixed-length short code is extracted.</li>
+            <li>A unique database constraint ensures collision safety.</li>
+            <li>If a collision occurs, a salted retry mechanism regenerates a new code.</li>
+            <li>Redirection is handled using HTTP 302 to enable accurate click analytics.</li>
+        </ul>
+
+        <p>
+            The system is deployed on Render with PostgreSQL (Neon) and
+            implements optimistic collision handling with database-level uniqueness guarantees.
+        </p>
+    </div>
+
+</div>
+
+<script>
+let latestShortUrl = "";
+
+async function shorten() {
+    const longUrl = document.getElementById("longUrl").value.trim();
+
+    if (!longUrl) {
+        alert("Please enter a URL");
+        return;
+    }
+
+    const resp = await fetch(
+        "/api/shorten?longUrl=" + encodeURIComponent(longUrl),
+        { method: "POST" }
+    );
+
+    if (!resp.ok) {
+        alert("Error shortening URL");
+        return;
+    }
+
+    latestShortUrl = await resp.text();
+
+    document.getElementById("shortUrl").innerHTML =
+        `<a href="${latestShortUrl}" target="_blank">${latestShortUrl}</a>`;
+
+    document.getElementById("resultBox").style.display = "block";
+}
+
+function copyLink() {
+    navigator.clipboard.writeText(latestShortUrl);
+    alert("Copied!");
+}
+
+function visitLink() {
+    window.open(latestShortUrl, "_blank");
+}
+</script>
+
+</body>
+</html>
